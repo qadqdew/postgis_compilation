@@ -1,0 +1,73 @@
+Reference - https://download.osgeo.org/postgis/docs/postgis-3.3.3.pdf#chapter.2
+
+Dependencies
+mkdir postgis-3.3.3
+cd postgis-3.3.3
+
+yum install autoconf automake libtool make gcc-c++
+
+wget https://github.com/protocolbuffers/protobuf/releases/download/v2.6.0/protobuf-2.6.0.tar.gz
+tar -xzf protobuf-2.6.0.tar.gz
+cd protobuf-2.6.0
+./autogen.sh
+./configure
+make
+sudo make install
+
+
+Sqlite3.11.0
+wget --no-check-certificate https://github.com/sqlite/sqlite/archive/refs/tags/version-3.11.0.zip
+unzip version-3.11.0.zip
+./configure --prefix=/home/sas/postgres --disable-static        \
+            CFLAGS="-g -O2 -DSQLITE_ENABLE_FTS3=1 \
+            -DSQLITE_ENABLE_COLUMN_METADATA=1     \
+            -DSQLITE_ENABLE_UNLOCK_NOTIFY=1       \
+            -DSQLITE_SECURE_DELETE=1              \
+            -DSQLITE_ENABLE_DBSTAT_VTAB=1"
+make sqlite3
+make install DESTDIR=/home/sas/postgres
+
+//export sqlite dependencies
+export CFLAGS="-I/home/sas/jdk/include -I/home/sas/jdk/include/linux"
+export SQLITE3_LIBS="-L/home/sas/postgres/lib -L/home/sas/postgis/sqlite-version-3.11.0/sqlite3 -lsqlite3"
+export CPPFLAGS="-I/home/sas/postgis-3.3.3/sqlite-version-3.11.0 -I/home/sas/jdk/include -I/home/sas/jdk/include/linux"
+
+wget --no-check-certificate  https://download.osgeo.org/proj/proj-6.3.1.tar.gz
+tar -xvf proj-6.3.1.tar.gz
+export ACCEPT_INFERIOR_RM_PROGRAM=yes
+export C_INCLUDE_PATH="/home/sas/jdk/include"
+cd proj-6.3.1
+./configure --prefix=/home/sas/postgres
+make 
+make install
+
+export LD_LIBRARY_PATH=/home/sas/postgres/lib
+export PROJ_INCLUDE_DIR=/home/sas/postgres/include
+export Proj_INCLUDE_DIR=/home/sas/postgres/include
+export PROJ_DIR=/home/sas/postgres
+
+wget https://download.osgeo.org/geos/
+cd geos-3.6.0
+mkdir build
+cd build
+export ACCEPT_INFERIOR_RM_PROGRAM=yes
+cmake -DCMAKE_PREFIX_PATH="/home/sas/postgres;/home/sas/postgres/include"  -DCMAKE_INSTALL_PREFIX=/home/sas/postgres ..
+make
+make install
+
+geos-config --version
+3.6.0
+
+gdal
+wget --no-check-certificate https://download.osgeo.org/gdal/3.7.0/gdal-3.7.0.tar.gz
+tar xvf gdal-3.7.0.tar.gz
+cd gdal-3.7.0
+sudo chown -R sas:sas .
+./configure --prefix=/home/sas/postgres
+make
+make install
+
+cd postgis-3.3.3
+./configure --without-protobuf --prefix=/home/sas/postgres --with-pgconfig=/home/sas/postgres/bin/pg_config --with-projdir=/home/sas/postgres/include/proj  --with-geosconfig=/home/sas/postgres/bin/geos-config --with-gdalconfig=/home/sas/postgres/bin/gdal-config
+make 
+make install
